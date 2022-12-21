@@ -69,8 +69,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   G4Element* N = new G4Element("Nitrogen",   "N",  z=7.,  a= 14.0067 *g/mole);
   G4Element* O = new G4Element("Oxygen",     "O",  z=8.,  a= 15.9994 *g/mole);
     
-  D = new G4Element("Deuterium","D",  z=1.,  a=  2.013553*g/mole);
-  O18 = new G4Element("IsoOxygen","O18",  z=8.,  a= 17.99916*g/mole);
+  G4Element* D = new G4Element("Deuterium","D",  z=1.,  a=  2.013553*g/mole);
+  G4Element* O18 = new G4Element("IsoOxygen","O18",  z=8.,  a= 17.99916*g/mole);
 
 
   // Get nist material manager
