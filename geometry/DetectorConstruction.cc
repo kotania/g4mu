@@ -57,6 +57,27 @@ DetectorConstruction::~DetectorConstruction()
 
 G4VPhysicalVolume* DetectorConstruction::Construct()
 {
+
+  G4double a;  // atomic mass
+  G4double z;  // atomic number
+  G4double density;
+  G4int ncomponents, natoms;
+    
+  //***Elements
+  H = new G4Element("Hydrogen",   "H",  z=1.,  a=  1.00794*g/mole);
+  C = new G4Element("C",          "C",  z=6.,  a= 12.01   *g/mole);
+  N = new G4Element("Nitrogen",   "N",  z=7.,  a= 14.0067 *g/mole);
+  O = new G4Element("Oxygen",     "O",  z=8.,  a= 15.9994 *g/mole);
+    
+  Na = new G4Element("Sodium",    "Na", z=11., a= 22.98976928*g/mole);
+  Mg = new G4Element("Magnesium", "Mg", z=12., a= 24.3050 *g/mole);
+  Cl = new G4Element("Chlorine",  "Cl", z=17., a= 35.4527 *g/mole);
+  Ca = new G4Element("Calcium",   "Ca", z=20., a= 40.0784*g/mole);
+
+  D = new G4Element("Deuterium","D",  z=1.,  a=  2.013553*g/mole);
+  O18 = new G4Element("IsoOxygen","O18",  z=8.,  a= 17.99916*g/mole);
+
+
   // Get nist material manager
   G4NistManager* nist = G4NistManager::Instance();
 
