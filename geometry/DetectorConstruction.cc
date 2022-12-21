@@ -96,7 +96,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   G4Material* AirBubble  = man->FindOrBuildMaterial("G4_AIR");
 
   // The more realistic ice 
-  Ice = new G4Material("Ice", 0.9216*g/cm3, ncomponents=2);
+  G4Material* Ice = new G4Material("Ice", 0.9216*g/cm3, ncomponents=2);
   Ice->AddMaterial(iso_ice,  99.9892*perCent);
   Ice->AddMaterial(AirBubble, 0.0108*perCent);
   Ice->GetIonisation()->SetMeanExcitationEnergy(75.0*eV);
