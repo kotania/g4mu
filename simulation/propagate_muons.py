@@ -22,7 +22,7 @@ class AppBuilder(G4VUserActionInitialization):
 
 
 # set detector construction
-geom = geometry.IceGeo()
+geom = geometry.geometry()
 gRunManager.SetUserInitialization(geom)
 
 
