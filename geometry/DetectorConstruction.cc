@@ -60,10 +60,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   // Get nist material manager
   G4NistManager* nist = G4NistManager::Instance();
 
-  // Envelope parameters
-  //
-  G4double env_sizeXY = 20*cm, env_sizeZ = 30*cm;
-  G4Material* env_mat = nist->FindOrBuildMaterial("G4_WATER");
 
   // Option to switch on/off checking of volumes overlaps
   //
@@ -74,7 +70,36 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   //
   G4double world_sizeXY = 2000*m;
   G4double world_sizeZ  = 2000*m;
-  G4Material* world_mat = nist->FindOrBuildMaterial("G4_ICE");
+
+  // Ice material definition from https://github.com/claudiok/clsim/blob/master/private/geant4/TrkDetectorConstruction.cxx
+
+  G4Material* normal_ice = new G4Material("normal_ice", 0.9216*g/cm3 , ncomponents=2);
+  normal_ice->AddElement(H, natoms=2);
+  normal_ice->AddElement(O, natoms=1);
+
+  G4Material* semiheavy_ice = new G4Material("semiheavy_ice", 0.9712*g/cm3 , ncomponents=3);
+  semiheavy_ice->AddElement(H, natoms=1);
+  semiheavy_ice->AddElement(D, natoms=1);
+  semiheavy_ice->AddElement(O, natoms=1);
+
+  G4Material* H2O18 = new G4Material("H2O18", 1.0254*g/cm3 , ncomponents=2);
+  H2O18->AddElement(H, natoms=2);
+  H2O18->AddElement(O18, natoms=1);
+
+  G4Material* iso_ice = new G4Material("iso_ice", 0.92*g/cm3, ncomponents=3);
+  iso_ice->AddMaterial(normal_ice, 99.7*perCent);
+  iso_ice->AddMaterial(semiheavy_ice, 0.03*perCent);
+  iso_ice->AddMaterial(H2O18, 0.2*perCent);
+
+  // We got Air bubbles in the ice!
+  G4NistManager* man = G4NistManager::Instance();
+  G4Material* AirBubble  = man->FindOrBuildMaterial("G4_AIR");
+
+  // The more realistic ice 
+  Ice = new G4Material("Ice", 0.9216*g/cm3, ncomponents=2);
+  Ice->AddMaterial(iso_ice,  99.9892*perCent);
+  Ice->AddMaterial(AirBubble, 0.0108*perCent);
+  Ice->GetIonisation()->SetMeanExcitationEnergy(75.0*eV);
 
   G4Box* solidWorld =
     new G4Box("World",                       //its name
@@ -82,7 +107,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
   G4LogicalVolume* logicWorld =
     new G4LogicalVolume(solidWorld,          //its solid
-                        world_mat,           //its material
+                        Ice,           //its material
                         "World");            //its name
 
   G4VPhysicalVolume* physWorld =
