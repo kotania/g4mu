@@ -17,11 +17,14 @@
        ```
        geant4.G4particles.G4PrimaryVertex(G4PrimaryParticle): No constructor defined!
        ```
-    -  append [lines 60-61](https://github.com/wkcwells/g4py/blob/master/source/particles/pyG4PrimaryParticle.cc#L60-L61) and [line 69](https://github.com/wkcwells/g4py/blob/master/source/particles/pyG4PrimaryParticle.cc#L69) from the external [g4py](https://github.com/wkcwells/g4py) repository to the end of the `g4python/source/particles/pyG4PrimaryParticle.cc` file. 
+    -  append [lines 60-61](https://github.com/wkcwells/g4py/blob/master/source/particles/pyG4PrimaryParticle.cc#L60-L61) and [line 69](https://github.com/wkcwells/g4py/blob/master/source/particles/pyG4PrimaryParticle.cc#L69) from the external [g4py](https://github.com/wkcwells/g4py) repository to the end of the `g4python/source/particles/pyG4PrimaryParticle.cc` file;
+    
+    -  append [line 73](https://github.com/wkcwells/g4py/blob/master/source/particles/pyG4PrimaryVertex.cc#L73) from g4py to the end of the `g4python/source/particles/pyG4PrimaryVertex.cc` file;
 
-    Otherwise the `simulation/propagate_muons_root_output.py` script from this repository will crash with the following error:
+    Otherwise the `simulation/propagate_muons_root_output.py` script from this repository will crash with the following errors:
        ```
-       'geant4.G4particles.G4PrimaryParticle' object has no attribute 'SetMass' ('Set4Momentum').
+       'geant4.G4particles.G4PrimaryParticle' object has no attribute 'SetMass' ('Set4Momentum')
+       'geant4.G4particles.G4PrimaryVertex' object has no attribute 'SetPrimary'
        ```
       
 
