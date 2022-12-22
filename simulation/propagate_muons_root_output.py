@@ -29,6 +29,9 @@ from geant4 import G4UserRunAction, G4UserEventAction, G4UserSteppingAction
 # Physics processes
 from geant4 import FTFP_BERT, QGSP_BERT, QGSP_BERT_HP
 
+# Detector constructioon
+from geant4 import G4VUserDetectorConstruction
+
 # Run Manager and UI commands
 from geant4 import gRunManager, gApplyUICommand, G4UImanager
 
