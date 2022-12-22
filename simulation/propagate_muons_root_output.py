@@ -35,6 +35,9 @@ import geometry
 # Run Manager and UI commands
 from geant4 import gRunManager, gApplyUICommand, G4UImanager
 
+# Random numbers
+from geant4 import HepRandom
+
 # Physical Units
 from geant4 import MeV, cm, g, GeV, m, ns
 from geant4 import G4ThreeVector
