@@ -8,11 +8,16 @@
   * This project used Geant4 11.1.0 downloaded from [here](https://gitlab.cern.ch/geant4/geant4/-/archive/v11.1.0/geant4-v11.1.0.tar.gz) and built from source.
 * [g4python](https://github.com/koichi-murakami/g4python.git)
   * Requires core Geant4 to be already built on the system
-  * IMPORTANT: prior to building g4python, uncomment [lines 34-36](https://github.com/koichi-murakami/g4python/blob/8fc4b88e6c6ff80a4993d29794feee19ec766d5f/source/particles/pyG4PrimaryVertex.cc#L34-L36) in `source/particles/pyG4PrimaryVertex.cc`. Otherwise the `simulation/propagate_muons_root_output.py` script from this repository will crash with the following error: 
+  * IMPORTANT: prior to building g4python, do the following:
+    - uncomment [lines 34-36](https://github.com/koichi-murakami/g4python/blob/8fc4b88e6c6ff80a4993d29794feee19ec766d5f/source/particles/pyG4PrimaryVertex.cc#L34-L36) in `source/particles/pyG4PrimaryVertex.cc`;
+    - uncomment [lines 36-42](https://github.com/koichi-murakami/g4python/blob/main/source/particles/pyG4PrimaryParticle.cc#L36-L42) in `source/particles/pyG4PrimaryParticle.cc`;
   
-      ```
-      geant4.G4particles.G4PrimaryVertex: No constructor defined!
-      ```
+    Otherwise the `simulation/propagate_muons_root_output.py` script from this repository will crash with the following error: 
+
+       ```
+       geant4.G4particles.G4PrimaryVertex(G4PrimaryParticle): No constructor defined!
+       ```
+      
 
 #### How to run the simulation
 
