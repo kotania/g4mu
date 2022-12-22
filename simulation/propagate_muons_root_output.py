@@ -16,9 +16,6 @@ import sys
 
 sys.path.append("../")
 
-# Geant4 geometry
-import geometry
-
 # Generators
 from geant4 import G4VUserPrimaryGeneratorAction, G4ParticleGun
 from geant4 import G4ParticleTable, G4PrimaryParticle, G4PrimaryVertex
@@ -29,8 +26,11 @@ from geant4 import G4UserRunAction, G4UserEventAction, G4UserSteppingAction
 # Physics processes
 from geant4 import FTFP_BERT, QGSP_BERT, QGSP_BERT_HP
 
-# Detector constructioon
+# Detector construction
 from geant4 import G4VUserDetectorConstruction
+
+# Geant4 geometry
+import geometry
 
 # Run Manager and UI commands
 from geant4 import gRunManager, gApplyUICommand, G4UImanager
