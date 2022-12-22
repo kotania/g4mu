@@ -14,7 +14,7 @@ set(GEANT4_INSTALL /groups/icecube/kozynets/software/geant4-v11.1.0-install
     CACHE STRING "Geant4 installation path")
 
 # Pybind11 cmake files location
-# Mac Homebrew
+# The below will work on IceCube clusters (e.g. NPX). If running locally,  update to your specific pybind11 path:
 set(pybind11_DIR /cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/RHEL_7_x86_64/share/cmake/pybind11
     CACHE STRING "Pybind11 search path")
 
