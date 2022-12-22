@@ -223,14 +223,6 @@ class MySimulation:
         otree.Branch("xe", tb.xe, "xe[nstep]/D")
         otree.Branch("ye", tb.ye, "ye[nstep]/D")
         otree.Branch("ze", tb.ze, "ze[nstep]/D")
-        otree.Branch("nq", tb.nq, "nq/I")
-        otree.Branch("tidq", tb.tidq, "tidq[nq]/I")
-        otree.Branch("pidq", tb.pidq, "pidq[nq]/I")
-        otree.Branch("sidq", tb.sidq, "sidq[nq]/I")
-        otree.Branch("dq", tb.dq, "dq[nq]/D")
-        otree.Branch("xq", tb.xq, "xq[nq]/D")
-        otree.Branch("yq", tb.yq, "yq[nq]/D")
-        otree.Branch("zq", tb.zq, "zq[nq]/D")
 
         self._ofile = ofile
         self._otree = otree
@@ -426,7 +418,6 @@ class MyEventAction(G4UserEventAction):
         self._tb.edep[0] = 0
         self._tb.ni[0] = 0
         self._tb.nstep[0] = 0
-        self._tb.nq[0] = 0
         return
 
     def EndOfEventAction(self, event):
