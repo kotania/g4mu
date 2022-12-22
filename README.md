@@ -9,13 +9,19 @@
 * [g4python](https://github.com/koichi-murakami/g4python.git)
   * Requires core Geant4 to be already built on the system
   * IMPORTANT: prior to building g4python, do the following:
-    - uncomment [lines 34-36](https://github.com/koichi-murakami/g4python/blob/8fc4b88e6c6ff80a4993d29794feee19ec766d5f/source/particles/pyG4PrimaryVertex.cc#L34-L36) in `source/particles/pyG4PrimaryVertex.cc`;
-    - uncomment [lines 36-42](https://github.com/koichi-murakami/g4python/blob/main/source/particles/pyG4PrimaryParticle.cc#L36-L42) in `source/particles/pyG4PrimaryParticle.cc`;
+    - uncomment [lines 34-36](https://github.com/koichi-murakami/g4python/blob/8fc4b88e6c6ff80a4993d29794feee19ec766d5f/source/particles/pyG4PrimaryVertex.cc#L34-L36) in `g4python/source/particles/pyG4PrimaryVertex.cc`;
+    - uncomment [lines 36-42](https://github.com/koichi-murakami/g4python/blob/main/source/particles/pyG4PrimaryParticle.cc#L36-L42) in `g4python/source/particles/pyG4PrimaryParticle.cc`;
   
     Otherwise the `simulation/propagate_muons_root_output.py` script from this repository will crash with the following error: 
 
        ```
        geant4.G4particles.G4PrimaryVertex(G4PrimaryParticle): No constructor defined!
+       ```
+    -  append [lines 60-61](https://github.com/wkcwells/g4py/blob/master/source/particles/pyG4PrimaryParticle.cc#L60-L61) and [line 69](https://github.com/wkcwells/g4py/blob/master/source/particles/pyG4PrimaryParticle.cc#L69) from the external [g4py](https://github.com/wkcwells/g4py) repository to the end of the `g4python/source/particles/pyG4PrimaryParticle.cc` file. 
+
+    Otherwise the `simulation/propagate_muons_root_output.py` script from this repository will crash with the following error:
+       ```
+       'geant4.G4particles.G4PrimaryParticle' object has no attribute 'SetMass' ('Set4Momentum').
        ```
       
 
