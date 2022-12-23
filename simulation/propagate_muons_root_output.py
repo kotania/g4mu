@@ -99,6 +99,7 @@ class MySimulation:
         return
 
     def finalize(self):
+        print('finalize')
         """Finalize the simulation"""
         self._close_output()
         return
@@ -144,6 +145,7 @@ class MySimulation:
         return
 
     def _prepare_output(self):
+        print('prepare output')
         """Prepare ROOT tree for output data"""
         ofile = TFile(self._ofilename, "RECREATE")
         otree = TTree("muons_in_ice", "Muon Simulation")
@@ -233,23 +235,27 @@ class MySimulation:
         return
 
     def _close_output(self):
+        print('close output')
         """Write ROOT data, and close file"""
         self._otree.Write()
         self._ofile.Close()
         return
 
     def _init_random(self):
+        print('init random')
         """Initialize random number generator"""
         HepRandom.setTheSeed(self._random_seed)
         return
 
     def _init_geometry(self):
+        print('init geometry')
         """Initialize geant geometry"""
         self._geom = geometry.geometry()
         gRunManager.SetUserInitialization(self._geom)
         return
 
     def _init_physics_list(self):
+        print('init phys list')
         """Initialize the physics list"""
         # Use standard physics list
         if self._physlist_name == "FTFP_BERT":
@@ -267,6 +273,7 @@ class MySimulation:
         return
 
     def _init_generator(self):
+        print('init generator')
         """Initialize particle generator"""
         self._source_pos = G4ThreeVector(0, 0, 0)
         self._generator = MyParticleGeneratorAction(
@@ -279,6 +286,8 @@ class MySimulation:
         return
 
     def _init_user_actions(self):
+
+        print('init user actions')
         """Initialize user actions"""
         self._run_action = MyRunAction()
         self._event_action = MyEventAction(
@@ -293,6 +302,7 @@ class MySimulation:
         return
 
     def _init_run_manager(self):
+        print('init run manager')
         """Initialize the Geant4 run manager"""
         gApplyUICommand("/run/initialize")
         return
@@ -314,6 +324,8 @@ class MyParticleGeneratorAction(G4VUserPrimaryGeneratorAction):
     "Generator for single type of particles (e.g. e-, gammas, etc)"
 
     def __init__(
+
+        print('init generator action')
         self,
         treebuffer,
         particleName="mu-",
@@ -332,6 +344,8 @@ class MyParticleGeneratorAction(G4VUserPrimaryGeneratorAction):
         pass
 
     def initialize(self):
+
+        print('init generator action')
         # Prepare generator
         particleTable = G4ParticleTable.GetParticleTable()
         self.particleDef = particleTable.FindParticle(self.particleName)
@@ -339,6 +353,8 @@ class MyParticleGeneratorAction(G4VUserPrimaryGeneratorAction):
         return
 
     def GeneratePrimaries(self, event):
+
+        print('generate primaries')
         # self.particleGun.GeneratePrimaryVertex(event)
         if not self.isInitialized:
             self.initialize()
@@ -389,6 +405,8 @@ class MyRunAction(G4UserRunAction):
     "My Run Action"
 
     def EndOfRunAction(self, run):
+
+        print('end of run action')
         print("*** End of Run")
         print(
             "- Run sammary : (id= %d, #events= %d)"
@@ -401,12 +419,16 @@ class MyEventAction(G4UserEventAction):
     "My Event Action"
 
     def __init__(self, treebuffer, outputtree):
+
+        print('init event action')
         """Constructor"""
         G4UserEventAction.__init__(self)
         self._tb = treebuffer
         self._otree = outputtree
 
     def BeginOfEventAction(self, event):
+
+        print('begin of event action')
         self._tb.ev[0] = -1
         self._tb.pida[0] = 0
         self._tb.xa[0] = 0
@@ -425,6 +447,8 @@ class MyEventAction(G4UserEventAction):
 
     def EndOfEventAction(self, event):
         """Record event"""
+
+        print('end of event action')
         tb = self._tb
         # Event ID
         tb.ev[0] = event.GetEventID()
@@ -483,6 +507,8 @@ class MySteppingAction(G4UserSteppingAction):
         self._tb = treebuffer
         self._geom = geometry
 
+        print('stepping action')
+
     def UserSteppingAction(self, step):
         """Collect data for current simulation step"""
         tb = self._tb
@@ -490,6 +516,8 @@ class MySteppingAction(G4UserSteppingAction):
         if istp >= tb.maxTracks:
             print("Reached maximum tracks:", istp)
             return
+
+        print('stepping action')
         track = step.GetTrack()
         prestep = step.GetPreStepPoint()
         poststep = step.GetPostStepPoint()
