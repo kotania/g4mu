@@ -52,8 +52,6 @@ from geant4 import G4RandomDirection, HepRandom
 # G4 Configuration
 from geant4 import G4UserLimits
 
-# Pre-defined NIST materials
-import g4py.NISTmaterials
 
 # General tools
 from copy import copy
@@ -300,7 +298,6 @@ class MySimulation:
 
     def _init_materials(self):
         """Prepare list of materials"""
-        g4py.NISTmaterials.Construct()
         # Define liquid argon (name,z,a,density)
         LAr_mat = G4Material("liquidArgon", 18.0, 39.95 * g / mole, 1.390 * g / cm3)
         self._materials["liquidArgon"] = LAr_mat
