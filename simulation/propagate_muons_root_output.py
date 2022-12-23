@@ -96,7 +96,9 @@ class MySimulation:
     def run(self):
         """Run the simulation"""
         gRunManager.BeamOn(0)
-        # gRunManager.BeamOn(self._nevents)
+
+        print("About do generate %s events..." % self._nevents)
+        gRunManager.BeamOn(self._nevents)
         return
 
     def finalize(self):
