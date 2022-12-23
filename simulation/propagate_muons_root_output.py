@@ -398,6 +398,7 @@ class MyParticleGeneratorAction(G4VUserPrimaryGeneratorAction):
             particle.SetMomentumDirection(particleDirection)
             vertex.SetPrimary(particle)
         event.AddPrimaryVertex(vertex)
+        print("added primary vertex")
 
     def GenerateVertexPosition(self):
         """Generate a vertex position"""
