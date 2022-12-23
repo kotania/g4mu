@@ -347,8 +347,11 @@ class MyParticleGeneratorAction(G4VUserPrimaryGeneratorAction):
         print("init generator action (method)")
         # Prepare generator
         particleTable = G4ParticleTable.GetParticleTable()
+        print("generated particle table")
         self.particleDef = particleTable.FindParticle(self.particleName)
+        print("found particle")
         self.isInitialized = True
+        print("initialized the particle")
         return
 
     def GeneratePrimaries(self, event):
