@@ -364,12 +364,15 @@ class MyParticleGeneratorAction(G4VUserPrimaryGeneratorAction):
         self._tb.ancestor = None
         # Create primaries
         position = self.GenerateVertexPosition()
+        print("generated vertex position")
         time = 0.0
         vertex = G4PrimaryVertex(position, time)
         mass = self.particleDef.GetPDGMass()
+        print("got pdg mass")
         # Record initial particle
         tb = self._tb
         tb.pidi[0] = self.particleDef.GetPDGEncoding()
+        print("got pdg encoding")
         tb.xi[0] = position.x / cm
         tb.yi[0] = position.y / cm
         tb.zi[0] = position.z / cm
@@ -379,6 +382,8 @@ class MyParticleGeneratorAction(G4VUserPrimaryGeneratorAction):
         tb.pzi[0] = 0
         tb.ekini[0] = 0
         tb.mi[0] = mass / GeV
+        print("set up initial particle properties")
+        print(self.energies)
         for enr in self.energies:
             particle = G4PrimaryParticle(self.particleDef.GetPDGEncoding())
             # Particle emission is in +z direction
