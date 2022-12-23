@@ -34,10 +34,10 @@ gRunManager.SetUserInitialization(physics_list)
 app_builder = AppBuilder()
 gRunManager.SetUserInitialization(app_builder)
 
-gApplyUICommand("/analysis/setFileName output_trial")
-
 gRunManager.Initialize()
 gRunManager.BeamOn(0)
 
 gTrackingManager.SetVerboseLevel(1)
 gRunManager.BeamOn(1)
+
+gApplyUICommand("/analysis/setFileName output_trial")
