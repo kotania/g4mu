@@ -95,7 +95,8 @@ class MySimulation:
 
     def run(self):
         """Run the simulation"""
-        gRunManager.BeamOn(self._nevents)
+        gRunManager.BeamOn(0)
+        # gRunManager.BeamOn(self._nevents)
         return
 
     def finalize(self):
