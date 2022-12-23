@@ -24,7 +24,7 @@ from geant4 import G4ParticleTable, G4PrimaryParticle, G4PrimaryVertex
 from geant4 import G4UserRunAction, G4UserEventAction, G4UserSteppingAction
 
 # Physics processes
-from geant4 import FTFP_BERT, QGSP_BERT, QGSP_BERT_HP
+from geant4 import FTFP_BERT, QGSP_BERT, QGSP_BERT_HP, QBBC
 
 # Detector construction
 from geant4 import G4VUserDetectorConstruction
@@ -65,7 +65,7 @@ class MySimulation:
         self._otree = None
         self._treebuffer = None
         self._geom = None
-        self._physlist_name = "QGSP_BERT"
+        self._physlist_name = "QBBC"
         self._physics_list = None
         self._source = None
         self._energies = None
@@ -267,9 +267,11 @@ class MySimulation:
             self._physics_list = QGSP_BERT()
         elif self._physlist_name == "QGSP_BERT_HP":
             self._physics_list = QGSP_BERT_HP()
+        elif self._physlist_name == "QBBC":
+            self._physics_list = QBBC()
         else:
             raise ValueError(
-                "Invalid physics list: '%r'.  Please choose from:FTFP_BERT, QGSP_BERT, QGSP_BERT_HP"
+                "Invalid physics list: '%r'.  Please choose from:FTFP_BERT, QGSP_BERT, QGSP_BERT_HP, QBBC"
                 % self._physlist_name
             )
         gRunManager.SetUserInitialization(self._physics_list)
