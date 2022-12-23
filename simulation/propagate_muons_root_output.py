@@ -307,7 +307,8 @@ class MySimulation:
     def _init_run_manager(self):
         print("init run manager")
         """Initialize the Geant4 run manager"""
-        gApplyUICommand("/run/initialize")
+        # gApplyUICommand("/run/initialize")
+        gRunManager.Initialize()
         return
 
 
@@ -321,6 +322,7 @@ class TreeBuffer:
 
 
 ###################################################################
+
 
 # Particle interaction generator
 class MyParticleGeneratorAction(G4VUserPrimaryGeneratorAction):
