@@ -302,8 +302,8 @@ class MySimulation:
             treebuffer=self._treebuffer, geometry=self._geom
         )
         gRunManager.SetUserAction(self._run_action)
-        gRunManager.SetUserAction(self._event_action)
-        gRunManager.SetUserAction(self._step_action)
+        # gRunManager.SetUserAction(self._event_action)
+        # gRunManager.SetUserAction(self._step_action)
         return
 
     def _init_run_manager(self):
