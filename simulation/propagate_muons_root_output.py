@@ -332,7 +332,7 @@ class MyParticleGeneratorAction(G4VUserPrimaryGeneratorAction):
         ],
         position=G4ThreeVector(0, 0, 0),
     ):
-        print("init generator action")
+        print("init generator action (constructor)")
         G4VUserPrimaryGeneratorAction.__init__(self)
         self.isInitialized = False
         self.particleName = particleName
@@ -344,7 +344,7 @@ class MyParticleGeneratorAction(G4VUserPrimaryGeneratorAction):
 
     def initialize(self):
 
-        print("init generator action")
+        print("init generator action (method)")
         # Prepare generator
         particleTable = G4ParticleTable.GetParticleTable()
         self.particleDef = particleTable.FindParticle(self.particleName)
