@@ -34,7 +34,7 @@ from geometry import icegeo
 
 # Run Manager and UI commands
 from geant4_pybind import G4RunManagerFactory, G4RunManagerType
-gRunManager = G4RunManagerFactory.CreateRunManager(G4RunManagerType.Serial)
+
 from geant4_pybind import G4UImanager
 
 # Random numbers
@@ -50,6 +50,7 @@ from geant4_pybind import G4UserLimits
 
 # ROOT
 from array import array
+
 from ROOT import TTree, TFile
 
 # Command-line arguments
@@ -73,7 +74,8 @@ class MySimulation:
         self._energies = None
         self._source_position = None
         self._generator = None
-        return
+        self.run_manager = G4RunManagerFactory.CreateRunManager(G4RunManagerType.Serial)
+        # return
 
     def initialize(self):
         """Initialize the simulation"""
@@ -93,28 +95,28 @@ class MySimulation:
         self._init_user_actions()
         # Prepare run manager
         self._init_run_manager()
-        return
+        # return
 
     def run(self):
         """Run the simulation"""
-       # gRunManager.BeamOn(0)
+        # self.run_manager.BeamOn(0)
 
         print("About do generate %s events..." % self._nevents)
-        gRunManager.BeamOn(self._nevents)
-        return
+        self.run_manager.BeamOn(self._nevents)
+        # return
 
     def finalize(self):
         print("finalize")
         """Finalize the simulation"""
         self._close_output()
-        return
+        # return
 
     ######################
 
     def _parse_args(self):
         """Parse command line arguments"""
         parser = ArgumentParser()
-        parser.add_argument("--nevents", type=int, help="Number of events", default=1)
+        parser.add_argument("--nevents", type=int, help="Number of events", default=10)
         parser.add_argument("--source", help="Particle name or generator", default="e-")
         parser.add_argument(
             "--energy", type=float, help="Particle energy", default=2.0 * GeV
@@ -147,7 +149,7 @@ class MySimulation:
         print("   output:", self._ofilename)
         print(" physlist:", self._physlist_name)
         print("     seed:", self._random_seed)
-        return
+        # return
 
     def _prepare_output(self):
         print("prepare output")
@@ -235,27 +237,27 @@ class MySimulation:
         self._ofile = ofile
         self._otree = otree
         self._treebuffer = tb
-        return
+        # return
 
     def _close_output(self):
         print("close output")
         """Write ROOT data, and close file"""
         self._otree.Write()
         self._ofile.Close()
-        return
+        # return
 
     def _init_random(self):
         print("init random")
         """Initialize random number generator"""
         HepRandom.setTheSeed(self._random_seed)
-        return
+        # return
 
     def _init_geometry(self):
         print("init geometry")
         """Initialize geant geometry"""
         self._geom = icegeo.IceCubeDetectorConstruction()
-        gRunManager.SetUserInitialization(self._geom)
-        return
+        self.run_manager.SetUserInitialization(self._geom)
+        # return
 
     def _init_physics_list(self):
         print("init phys list")
@@ -274,21 +276,16 @@ class MySimulation:
                 "Invalid physics list: '%r'.  Please choose from:FTFP_BERT, QGSP_BERT, QGSP_BERT_HP, QBBC"
                 % self._physlist_name
             )
-        gRunManager.SetUserInitialization(self._physics_list)
-        return
+        self.run_manager.SetUserInitialization(self._physics_list)
+        # return
 
     def _init_generator(self):
         print("init generator")
         """Initialize particle generator"""
         self._source_pos = G4ThreeVector(0, 0, 0)
-        self._generator = MyParticleGeneratorAction(
-            particleName=self._source,
-            energies=self._energies,
-            position=self._source_pos,
-            treebuffer=self._treebuffer,
-        )
-        gRunManager.SetUserAction(self._generator)
-        return
+        self._generator = B1PrimaryGeneratorAction()
+        self.run_manager.SetUserAction(self._generator)
+        # return
 
     def _init_user_actions(self):
 
@@ -301,17 +298,17 @@ class MySimulation:
         self._step_action = MySteppingAction(
             treebuffer=self._treebuffer, geometry=self._geom
         )
-        gRunManager.SetUserAction(self._run_action)
-        # gRunManager.SetUserAction(self._event_action)
-        # gRunManager.SetUserAction(self._step_action)
-        return
+        self.run_manager.SetUserAction(self._run_action)
+        self.run_manager.SetUserAction(self._event_action)
+        self.run_manager.SetUserAction(self._step_action)
+        # return
 
     def _init_run_manager(self):
         print("init run manager")
         """Initialize the Geant4 run manager"""
         # gApplyUICommand("/run/initialize")
-        gRunManager.Initialize()
-        return
+        self.run_manager.Initialize()
+        # return
 
 
 ###################################################################
@@ -326,98 +323,125 @@ class TreeBuffer:
 ###################################################################
 
 
-# Particle interaction generator
-class MyParticleGeneratorAction(G4VUserPrimaryGeneratorAction):
-    "Generator for single type of particles (e.g. e-, gammas, etc)"
+class B1PrimaryGeneratorAction(G4VUserPrimaryGeneratorAction):
+    def __init__(self):
+        super().__init__()
 
-    def __init__(
-        self,
-        treebuffer,
-        particleName="mu-",
-        energies=[
-            1.0 * GeV,
-        ],
-        position=G4ThreeVector(0, 0, 0),
-    ):
-        print("init generator action (constructor)")
-        G4VUserPrimaryGeneratorAction.__init__(self)
-        self.isInitialized = False
-        self.particleName = particleName
-        self.energies = energies
-        self.position = position
-        self.particleDef = None
-        self._tb = treebuffer
-        pass
+        self.fParticleGun = G4ParticleGun(1)
 
-    def initialize(self):
-
-        print("init generator action (method)")
-        # Prepare generator
+        # default particle kinematic
         particleTable = G4ParticleTable.GetParticleTable()
-        print("generated particle table")
-        self.particleDef = particleTable.FindParticle(self.particleName)
-        print("found particle")
-        self.isInitialized = True
-        print("initialized the particle")
-        return
+        particle = particleTable.FindParticle("mu-")
+        self.fParticleGun.SetParticleDefinition(particle)
+        self.fParticleGun.SetParticleMomentumDirection(G4ThreeVector(0, 0, 1))
+        self.fParticleGun.SetParticleEnergy(100 * GeV)
 
-    def GeneratePrimaries(self, event):
+    def GeneratePrimaries(self, anEvent):
+        # this function is called at the begining of each event
 
-        print("generate primaries")
-        # self.particleGun.GeneratePrimaryVertex(event)
-        if not self.isInitialized:
-            self.initialize()
-        # No ancestor for this generator
-        self._tb.ancestor = None
-        # Create primaries
-        position = self.GenerateVertexPosition()
-        print("generated vertex position")
-        time = 0.0
-        vertex = G4PrimaryVertex(position, time)
-        mass = self.particleDef.GetPDGMass()
-        print("got pdg mass")
-        # Record initial particle
-        tb = self._tb
-        tb.pidi[0] = self.particleDef.GetPDGEncoding()
-        print("got pdg encoding")
-        tb.xi[0] = position.x / cm
-        tb.yi[0] = position.y / cm
-        tb.zi[0] = position.z / cm
-        tb.ti[0] = time / ns
-        tb.pxi[0] = 0
-        tb.pyi[0] = 0
-        tb.pzi[0] = 0
-        tb.ekini[0] = 0
-        tb.mi[0] = mass / GeV
-        print("set up initial particle properties")
-        print(self.energies)
-        for enr in self.energies:
-            particle = G4PrimaryParticle(self.particleDef.GetPDGEncoding())
-            # Particle emission is in +z direction
-            particle.Set4Momentum(0, 0, np.sqrt(enr**2 - mass**2), enr)
-            # Add to total initial momentum and kinetic energy
-            tb.pzi[0] += np.sqrt((self.energies[0]) ** 2 - mass**2) / GeV
-            tb.ekini[0] += (enr - mass) / GeV
-            # Ensure mass is exact
-            particle.SetMass(mass)
-            # Set direction
-            particleDirection = self.GenerateParticleDirection()
-            particle.SetMomentumDirection(particleDirection)
-            vertex.SetPrimary(particle)
-        event.AddPrimaryVertex(vertex)
-        print("added primary vertex")
+        # In order to avoid dependence of PrimaryGeneratorAction
+        # on DetectorConstruction class we get Envelope volume
+        # from G4LogicalVolumeStore.
 
-    def GenerateVertexPosition(self):
-        """Generate a vertex position"""
-        return G4ThreeVector(self.position)
+        self.fParticleGun.SetParticlePosition(G4ThreeVector(0, 0, 1))
+        self.fParticleGun.GeneratePrimaryVertex(anEvent)
 
-    def GenerateParticleDirection(self):
-        """Generate a particle direction"""
-        return G4ThreeVector(0, 0, 1)
+
+# Particle interaction generator
+# class MyParticleGeneratorAction(G4VUserPrimaryGeneratorAction):
+#     "Generator for single type of particles (e.g. e-, gammas, etc)"
+
+#     def __init__(
+#         self,
+#         treebuffer,
+#         particleName="mu-",
+#         energies=[
+#             1.0 * GeV,
+#         ],
+#         position=G4ThreeVector(0, 0, 0),
+#     ):
+#         print("init generator action (constructor)")
+#         G4VUserPrimaryGeneratorAction.__init__(self)
+#         self.isInitialized = False
+#         self.particleName = particleName
+#         self.energies = energies
+#         self.position = position
+#         self.particleDef = None
+#         self._tb = treebuffer
+#         # pass
+
+#     def initialize(self):
+
+#         print("init generator action (method)")
+#         # Prepare generator
+#         particleTable = G4ParticleTable.GetParticleTable()
+#         print("generated particle table")
+#         self.particleDef = particleTable.FindParticle(self.particleName)
+#         print("found particle")
+#         self.isInitialized = True
+#         print("initialized the particle")
+#         # return
+
+#     def GeneratePrimaries(self, event):
+
+#         print("generate primaries")
+#         # self.particleGun.GeneratePrimaryVertex(event)
+#         if not self.isInitialized:
+#             self.initialize()
+#         # No ancestor for this generator
+#         self._tb.ancestor = None
+#         # Create primaries
+#         position = self.GenerateVertexPosition()
+#         print("generated vertex position")
+#         time = 0.0
+#         vertex = G4PrimaryVertex(position, time)
+#         mass = self.particleDef.GetPDGMass()
+#         print("got pdg mass")
+#         # Record initial particle
+#         tb = self._tb
+#         tb.pidi[0] = self.particleDef.GetPDGEncoding()
+#         print("got pdg encoding")
+#         tb.xi[0] = position.x / cm
+#         tb.yi[0] = position.y / cm
+#         tb.zi[0] = position.z / cm
+#         tb.ti[0] = time / ns
+#         tb.pxi[0] = 0
+#         tb.pyi[0] = 0
+#         tb.pzi[0] = 0
+#         tb.ekini[0] = 0
+#         tb.mi[0] = mass / GeV
+#         print("set up initial particle properties")
+#         print(self.energies)
+#         for enr in self.energies:
+#             particle = G4PrimaryParticle(self.particleDef.GetPDGEncoding())
+#             # Particle emission is in +z direction
+#             particle.Set4Momentum(0, 0, np.sqrt(enr**2 - mass**2), enr)
+#             # Add to total initial momentum and kinetic energy
+#             tb.pzi[0] += np.sqrt((self.energies[0]) ** 2 - mass**2) / GeV
+#             tb.ekini[0] += (enr - mass) / GeV
+#             print(enr, mass)
+#             # Ensure mass is exact
+#             # particle.SetMass(mass)
+#             # Set direction
+#             # particleDirection = self.GenerateParticleDirection()
+#             # particle.SetMomentumDirection(particleDirection)
+#             vertex.SetPrimary(particle)
+#             event.AddPrimaryVertex(vertex)
+#         print("added primary vertex")
+
+#     def GenerateVertexPosition(self):
+#         """Generate a vertex position"""
+#         return G4ThreeVector(self.position)
+
+#     def GenerateParticleDirection(self):
+#         """Generate a particle direction"""
+#         return G4ThreeVector(0, 0, 1)
 
 
 class MyRunAction(G4UserRunAction):
     "My Run Action"
+
+    print("begin of run action")
 
     def EndOfRunAction(self, run):
 
@@ -447,7 +471,7 @@ class MyEventAction(G4UserEventAction):
         self._tb.ev[0] = -1
         self._tb.pida[0] = 0
         self._tb.xa[0] = 0
-        self._tb.ya[0] = 0 
+        self._tb.ya[0] = 0
         self._tb.za[0] = 0
         self._tb.ta[0] = 0
         self._tb.pxa[0] = 0
@@ -457,7 +481,7 @@ class MyEventAction(G4UserEventAction):
         self._tb.ma[0] = 0
         self._tb.ni[0] = 0
         self._tb.nstep[0] = 0
-        return
+        # return
 
     def EndOfEventAction(self, event):
         """Record event"""
@@ -508,7 +532,7 @@ class MyEventAction(G4UserEventAction):
                     break
         tb.ni[0] = ni
         self._otree.Fill()
-        return
+        # return
 
 
 # ------------------------------------------------------------------
@@ -549,7 +573,7 @@ class MySteppingAction(G4UserSteppingAction):
         tb.ye[istp] = postpos.y / cm
         tb.ze[istp] = postpos.z / cm
         tb.nstep[0] += 1
-        return
+        # return
 
 
 ###################################################################
