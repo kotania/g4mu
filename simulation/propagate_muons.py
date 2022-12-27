@@ -40,4 +40,3 @@ gRunManager.BeamOn(0)
 gTrackingManager.SetVerboseLevel(1)
 gRunManager.BeamOn(1)
 
-gApplyUICommand("/analysis/setFileName output_trial")
