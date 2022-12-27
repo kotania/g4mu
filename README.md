@@ -42,6 +42,6 @@
     - `-n` is the number of events
     - `-e` is the projectile energy in MeV
     - `-rs` is the random seed (optional)
-    - `so` is the source particle name (optional; default is 'mu-')
+    - `-so` is the source particle name (optional; default is 'mu-')
 
 The above command will run the Geant4 simulation and save the detailed information (including secondary energies, track lengths, and processes that created them) into ROOT trees (one tree entry per event). 
