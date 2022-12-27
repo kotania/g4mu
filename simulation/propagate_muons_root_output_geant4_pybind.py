@@ -21,7 +21,12 @@ from geant4_pybind import G4VUserPrimaryGeneratorAction, G4ParticleGun
 from geant4_pybind import G4ParticleTable, G4PrimaryParticle, G4PrimaryVertex
 
 # User-geant4 actions
-from geant4_pybind import G4UserRunAction, G4UserEventAction, G4UserSteppingAction
+from geant4_pybind import (
+    G4UserRunAction,
+    G4UserEventAction,
+    G4UserSteppingAction,
+    G4UserTrackingAction,
+)
 
 # Physics processes
 from geant4_pybind import FTFP_BERT, QGSP_BERT, QGSP_BERT_HP, QBBC
@@ -50,25 +55,43 @@ from geant4_pybind import G4UserLimits
 
 # ROOT
 from array import array
-
+import ROOT
 from ROOT import TTree, TFile
 
-# Command-line arguments
+# Command line arguments
 from argparse import ArgumentParser
 
+SOURCE_POSITION = G4ThreeVector(0, 0, 0)
+INIT_DIRECTION = G4ThreeVector(0, 0, 1)
 
-class MySimulation:
-    "My Simple Simulation"
 
+parser = ArgumentParser()
+parser.add_argument("-n", "--nevents", type=int, help="Number of events", default=10)
+parser.add_argument("-so", "--source", help="Particle name or generator", default="mu-")
+parser.add_argument(
+    "-e", "--energy", type=float, help="Particle energy in MeV", default=20.0 * GeV
+)
+parser.add_argument("-o", "--output", help="Name of the ROOT output file")
+parser.add_argument("-rs", "--seed", type=int, help="Random seed", default=312)
+parser.add_argument(
+    "--physlist",
+    help="G4 Physics List: FTFP_BERT, QGSP_BERT, QGSP_BERT_HP",
+    default="QGSP_BERT",
+)
+
+args = parser.parse_args()
+
+
+class Simulation:
     def __init__(self):
         """Constructor"""
-        self._ofilename = "ice_sim.root"
-        self._random_seed = 23
+        self._ofilename = args.output
+        self._random_seed = args.seed
         self._ofile = None
         self._otree = None
         self._treebuffer = None
         self._geom = None
-        self._physlist_name = "QBBC"
+        self._physlist_name = args.physlist
         self._physics_list = None
         self._source = None
         self._energies = None
@@ -79,7 +102,7 @@ class MySimulation:
 
     def initialize(self):
         """Initialize the simulation"""
-        # Parse command-line arguments
+        # Parse command line arguments
         self._parse_args()
         # Prepare output file
         self._prepare_output()
@@ -98,38 +121,20 @@ class MySimulation:
         # return
 
     def run(self):
-        """Run the simulation"""
-        # self.run_manager.BeamOn(0)
 
-        print("About do generate %s events..." % self._nevents)
+        print("About to generate %s events..." % self._nevents)
         self.run_manager.BeamOn(self._nevents)
-        # return
 
     def finalize(self):
-        print("finalize")
-        """Finalize the simulation"""
+        print("Finalizing")
         self._close_output()
-        # return
 
     ######################
 
     def _parse_args(self):
         """Parse command line arguments"""
-        parser = ArgumentParser()
-        parser.add_argument("--nevents", type=int, help="Number of events", default=10)
-        parser.add_argument("--source", help="Particle name or generator", default="e-")
-        parser.add_argument(
-            "--energy", type=float, help="Particle energy", default=2.0 * GeV
-        )
-        parser.add_argument("--output", help="Output filename")
-        parser.add_argument("--seed", type=int, help="Random seed")
-        parser.add_argument(
-            "--physlist",
-            help="G4 Physics List: FTFP_BERT, QGSP_BERT, QGSP_BERT_HP",
-            default="QGSP_BERT",
-        )
 
-        self._args = parser.parse_args()
+        self._args = args
         if self._args.nevents is not None:
             self._nevents = self._args.nevents
         if self._args.source is not None:
@@ -152,27 +157,14 @@ class MySimulation:
         # return
 
     def _prepare_output(self):
-        print("prepare output")
+        print("Prepare output file...")
         """Prepare ROOT tree for output data"""
         ofile = TFile(self._ofilename, "RECREATE")
         otree = TTree("muons_in_ice", "Muon Simulation")
         tb = TreeBuffer()
-
-        tb.maxInit = 100
-        tb.maxTracks = 100000
+        tb.maxInit = int(1e6)
+        tb.maxTracks = int(1e7)
         tb.ev = array("i", [0])
-        # Ancestor particles (e.g. muon)
-        # Note: For simplicity, assume only one potential ancestor
-        tb.pida = array("i", [0])
-        tb.xa = array("d", [0])
-        tb.ya = array("d", [0])
-        tb.za = array("d", [0])
-        tb.ta = array("d", [0])
-        tb.pxa = array("d", [0])
-        tb.pya = array("d", [0])
-        tb.pza = array("d", [0])
-        tb.ekina = array("d", [0])
-        tb.ma = array("d", [0])
         # Geant4 initial state particles
         tb.ni = array("i", [0])
         tb.pidi = array("i", [0] * tb.maxInit)
@@ -187,30 +179,17 @@ class MySimulation:
         tb.mi = array("d", [0] * tb.maxInit)
         # Geant4 track step data
         tb.nstep = array("i", [0])
-        tb.tid = array("i", [0] * tb.maxTracks)
-        tb.pid = array("i", [0] * tb.maxTracks)
-        tb.parid = array("i", [0] * tb.maxTracks)
-        tb.xs = array("d", [0] * tb.maxTracks)
-        tb.ys = array("d", [0] * tb.maxTracks)
-        tb.zs = array("d", [0] * tb.maxTracks)
-        tb.xe = array("d", [0] * tb.maxTracks)
-        tb.ye = array("d", [0] * tb.maxTracks)
-        tb.ze = array("d", [0] * tb.maxTracks)
-        tb.ekin = array("d", [0] * tb.maxTracks)
+        tb.tid = array("i", np.zeros(tb.maxTracks, dtype="int64"))
+        tb.pid = array("i", np.zeros(tb.maxTracks, dtype="int64"))
+        tb.parid = array("i", np.zeros(tb.maxTracks, dtype="int64"))
+        proc_strings = ROOT.vector("string")()
+        tb.proc = proc_strings
+        tb.track_length = array("d", np.zeros(tb.maxTracks, dtype="float64"))
+        tb.ekin = array("d", np.zeros(tb.maxTracks, dtype="float64"))
         # Hook for ancestor particle
         tb.ancestor = None
 
         otree.Branch("ev", tb.ev, "ev/I")
-        otree.Branch("pida", tb.pida, "pida/I")
-        otree.Branch("xa", tb.xa, "xa/D")
-        otree.Branch("ya", tb.ya, "ya/D")
-        otree.Branch("za", tb.za, "za/D")
-        otree.Branch("ta", tb.ta, "ta/D")
-        otree.Branch("pxa", tb.pxa, "pxa/D")
-        otree.Branch("pya", tb.pya, "pya/D")
-        otree.Branch("pza", tb.pza, "pza/D")
-        otree.Branch("ekina", tb.ekina, "ekina/D")
-        otree.Branch("ma", tb.ma, "ma/D")
         otree.Branch("ni", tb.ni, "ni/I")
         otree.Branch("pidi", tb.pidi, "pidi[ni]/I")
         otree.Branch("xi", tb.xi, "xi[ni]/D")
@@ -226,13 +205,9 @@ class MySimulation:
         otree.Branch("tid", tb.tid, "tid[nstep]/I")
         otree.Branch("pid", tb.pid, "pid[nstep]/I")
         otree.Branch("parid", tb.parid, "parid[nstep]/I")
+        otree.Branch("proc", tb.proc)
+        otree.Branch("track_length", tb.track_length, "track_length[nstep]/D")
         otree.Branch("ekin", tb.ekin, "ekin[nstep]/D")
-        otree.Branch("xs", tb.xs, "xs[nstep]/D")
-        otree.Branch("ys", tb.ys, "ys[nstep]/D")
-        otree.Branch("zs", tb.zs, "zs[nstep]/D")
-        otree.Branch("xe", tb.xe, "xe[nstep]/D")
-        otree.Branch("ye", tb.ye, "ye[nstep]/D")
-        otree.Branch("ze", tb.ze, "ze[nstep]/D")
 
         self._ofile = ofile
         self._otree = otree
@@ -240,29 +215,25 @@ class MySimulation:
         # return
 
     def _close_output(self):
-        print("close output")
-        """Write ROOT data, and close file"""
+        print("Closing output file")
+        """Write ROOT data and close file"""
         self._otree.Write()
         self._ofile.Close()
         # return
 
     def _init_random(self):
-        print("init random")
         """Initialize random number generator"""
         HepRandom.setTheSeed(self._random_seed)
         # return
 
     def _init_geometry(self):
-        print("init geometry")
-        """Initialize geant geometry"""
+        print("Initializing geometry")
         self._geom = icegeo.IceCubeDetectorConstruction()
         self.run_manager.SetUserInitialization(self._geom)
         # return
 
     def _init_physics_list(self):
-        print("init phys list")
-        """Initialize the physics list"""
-        # Use standard physics list
+        print("Initializing physics list")
         if self._physlist_name == "FTFP_BERT":
             self._physics_list = FTFP_BERT()
         elif self._physlist_name == "QGSP_BERT":
@@ -280,33 +251,29 @@ class MySimulation:
         # return
 
     def _init_generator(self):
-        print("init generator")
-        """Initialize particle generator"""
-        self._source_pos = G4ThreeVector(0, 0, 0)
-        self._generator = B1PrimaryGeneratorAction()
+        print("Initializing generator")
+        self._source_pos = SOURCE_POSITION
+        self._generator = PrimaryGeneratorAction(self._treebuffer)
         self.run_manager.SetUserAction(self._generator)
         # return
 
     def _init_user_actions(self):
 
-        print("init user actions")
-        """Initialize user actions"""
-        self._run_action = MyRunAction()
-        self._event_action = MyEventAction(
+        print("Initializing user actions")
+        self._run_action = RunAction()
+        self._event_action = EventAction(
             treebuffer=self._treebuffer, outputtree=self._otree
         )
-        self._step_action = MySteppingAction(
+        self._step_action = SteppingAction(
             treebuffer=self._treebuffer, geometry=self._geom
         )
+
         self.run_manager.SetUserAction(self._run_action)
         self.run_manager.SetUserAction(self._event_action)
         self.run_manager.SetUserAction(self._step_action)
-        # return
 
     def _init_run_manager(self):
-        print("init run manager")
-        """Initialize the Geant4 run manager"""
-        # gApplyUICommand("/run/initialize")
+        print("Initializing run manager")
         self.run_manager.Initialize()
         # return
 
@@ -323,143 +290,70 @@ class TreeBuffer:
 ###################################################################
 
 
-class B1PrimaryGeneratorAction(G4VUserPrimaryGeneratorAction):
-    def __init__(self):
+class PrimaryGeneratorAction(G4VUserPrimaryGeneratorAction):
+    def __init__(self, treebuffer):
         super().__init__()
 
+        self.isInitialized = False
         self.fParticleGun = G4ParticleGun(1)
-
+        self._tb = treebuffer
         # default particle kinematic
         particleTable = G4ParticleTable.GetParticleTable()
-        particle = particleTable.FindParticle("mu-")
+        self.particle_name = args.source
+        particle = particleTable.FindParticle(self.particle_name)
         self.fParticleGun.SetParticleDefinition(particle)
-        self.fParticleGun.SetParticleMomentumDirection(G4ThreeVector(0, 0, 1))
-        self.fParticleGun.SetParticleEnergy(100 * GeV)
+        self.fParticleGun.SetParticleMomentumDirection(INIT_DIRECTION)
+        self.fParticleGun.SetParticleEnergy(args.energy)
+
+    def initialize(self):
+
+        particleTable = G4ParticleTable.GetParticleTable()
+        self.particleDef = particleTable.FindParticle(self.particle_name)
+        self.isInitialized = True
 
     def GeneratePrimaries(self, anEvent):
         # this function is called at the begining of each event
 
-        # In order to avoid dependence of PrimaryGeneratorAction
-        # on DetectorConstruction class we get Envelope volume
-        # from G4LogicalVolumeStore.
+        if not self.isInitialized:
+            self.initialize()
+        # No ancestor for this generator
+        self._tb.ancestor = None
 
-        self.fParticleGun.SetParticlePosition(G4ThreeVector(0, 0, 1))
+        position = SOURCE_POSITION
+        time = 0.0
+        self.fParticleGun.SetParticlePosition(position)
         self.fParticleGun.GeneratePrimaryVertex(anEvent)
+        mass = self.particleDef.GetPDGMass()
+        tb = self._tb
+        tb.pidi[0] = self.particleDef.GetPDGEncoding()
+        tb.xi[0] = position.x / cm
+        tb.yi[0] = position.y / cm
+        tb.zi[0] = position.z / cm
+        tb.ti[0] = time / ns
+        tb.pxi[0] = 0
+        tb.pyi[0] = 0
+        tb.pzi[0] = np.sqrt(args.energy**2 - mass**2) / GeV
+        tb.ekini[0] = (args.energy - mass) / GeV
+        tb.mi[0] = mass / GeV
 
 
-# Particle interaction generator
-# class MyParticleGeneratorAction(G4VUserPrimaryGeneratorAction):
-#     "Generator for single type of particles (e.g. e-, gammas, etc)"
+class RunAction(G4UserRunAction):
 
-#     def __init__(
-#         self,
-#         treebuffer,
-#         particleName="mu-",
-#         energies=[
-#             1.0 * GeV,
-#         ],
-#         position=G4ThreeVector(0, 0, 0),
-#     ):
-#         print("init generator action (constructor)")
-#         G4VUserPrimaryGeneratorAction.__init__(self)
-#         self.isInitialized = False
-#         self.particleName = particleName
-#         self.energies = energies
-#         self.position = position
-#         self.particleDef = None
-#         self._tb = treebuffer
-#         # pass
-
-#     def initialize(self):
-
-#         print("init generator action (method)")
-#         # Prepare generator
-#         particleTable = G4ParticleTable.GetParticleTable()
-#         print("generated particle table")
-#         self.particleDef = particleTable.FindParticle(self.particleName)
-#         print("found particle")
-#         self.isInitialized = True
-#         print("initialized the particle")
-#         # return
-
-#     def GeneratePrimaries(self, event):
-
-#         print("generate primaries")
-#         # self.particleGun.GeneratePrimaryVertex(event)
-#         if not self.isInitialized:
-#             self.initialize()
-#         # No ancestor for this generator
-#         self._tb.ancestor = None
-#         # Create primaries
-#         position = self.GenerateVertexPosition()
-#         print("generated vertex position")
-#         time = 0.0
-#         vertex = G4PrimaryVertex(position, time)
-#         mass = self.particleDef.GetPDGMass()
-#         print("got pdg mass")
-#         # Record initial particle
-#         tb = self._tb
-#         tb.pidi[0] = self.particleDef.GetPDGEncoding()
-#         print("got pdg encoding")
-#         tb.xi[0] = position.x / cm
-#         tb.yi[0] = position.y / cm
-#         tb.zi[0] = position.z / cm
-#         tb.ti[0] = time / ns
-#         tb.pxi[0] = 0
-#         tb.pyi[0] = 0
-#         tb.pzi[0] = 0
-#         tb.ekini[0] = 0
-#         tb.mi[0] = mass / GeV
-#         print("set up initial particle properties")
-#         print(self.energies)
-#         for enr in self.energies:
-#             particle = G4PrimaryParticle(self.particleDef.GetPDGEncoding())
-#             # Particle emission is in +z direction
-#             particle.Set4Momentum(0, 0, np.sqrt(enr**2 - mass**2), enr)
-#             # Add to total initial momentum and kinetic energy
-#             tb.pzi[0] += np.sqrt((self.energies[0]) ** 2 - mass**2) / GeV
-#             tb.ekini[0] += (enr - mass) / GeV
-#             print(enr, mass)
-#             # Ensure mass is exact
-#             # particle.SetMass(mass)
-#             # Set direction
-#             # particleDirection = self.GenerateParticleDirection()
-#             # particle.SetMomentumDirection(particleDirection)
-#             vertex.SetPrimary(particle)
-#             event.AddPrimaryVertex(vertex)
-#         print("added primary vertex")
-
-#     def GenerateVertexPosition(self):
-#         """Generate a vertex position"""
-#         return G4ThreeVector(self.position)
-
-#     def GenerateParticleDirection(self):
-#         """Generate a particle direction"""
-#         return G4ThreeVector(0, 0, 1)
-
-
-class MyRunAction(G4UserRunAction):
-    "My Run Action"
-
-    print("begin of run action")
+    print("*** Beginning of the run ***")
 
     def EndOfRunAction(self, run):
 
-        print("end of run action")
-        print("*** End of Run")
+        print("*** End of the run ***")
         print(
-            "- Run sammary : (id= %d, #events= %d)"
+            "- Run summary : (id= %d, #events= %d)"
             % (run.GetRunID(), run.GetNumberOfEventToBeProcessed())
         )
 
 
 # ------------------------------------------------------------------
-class MyEventAction(G4UserEventAction):
-    "My Event Action"
-
+class EventAction(G4UserEventAction):
     def __init__(self, treebuffer, outputtree):
 
-        print("init event action")
         """Constructor"""
         G4UserEventAction.__init__(self)
         self._tb = treebuffer
@@ -467,18 +361,6 @@ class MyEventAction(G4UserEventAction):
 
     def BeginOfEventAction(self, event):
 
-        print("begin of event action")
-        self._tb.ev[0] = -1
-        self._tb.pida[0] = 0
-        self._tb.xa[0] = 0
-        self._tb.ya[0] = 0
-        self._tb.za[0] = 0
-        self._tb.ta[0] = 0
-        self._tb.pxa[0] = 0
-        self._tb.pya[0] = 0
-        self._tb.pza[0] = 0
-        self._tb.ekina[0] = 0
-        self._tb.ma[0] = 0
         self._tb.ni[0] = 0
         self._tb.nstep[0] = 0
         # return
@@ -486,26 +368,9 @@ class MyEventAction(G4UserEventAction):
     def EndOfEventAction(self, event):
         """Record event"""
 
-        print("end of event action")
         tb = self._tb
         # Event ID
         tb.ev[0] = event.GetEventID()
-        # Ancestor particle (e.g. neutrino)
-        if tb.ancestor != None:
-            # Log info
-            heppart = tb.ancestor
-            tb.pida[0] = heppart["pdgid"]
-            heppos = heppart["position"]
-            hepmom = heppart["momentum"]
-            tb.xa[0] = heppos[0] / cm
-            tb.ya[0] = heppos[1] / cm
-            tb.za[0] = heppos[2] / cm
-            tb.ta[0] = heppart["time"] / ns
-            tb.pxa[0] = hepmom[0] / GeV
-            tb.pya[0] = hepmom[1] / GeV
-            tb.pza[0] = hepmom[2] / GeV
-            tb.ekina[0] = (heppart["energy"] - heppart["mass"]) / GeV
-            tb.ma[0] = heppart["mass"] / GeV
         # Primary particles
         ni = 0
         for pv_idx in range(event.GetNumberOfPrimaryVertex()):
@@ -532,20 +397,16 @@ class MyEventAction(G4UserEventAction):
                     break
         tb.ni[0] = ni
         self._otree.Fill()
-        # return
+        tb.proc.clear()
 
 
 # ------------------------------------------------------------------
-class MySteppingAction(G4UserSteppingAction):
-    "My Stepping Action"
-
+class SteppingAction(G4UserSteppingAction):
     def __init__(self, treebuffer, geometry):
         """Constructor"""
         G4UserSteppingAction.__init__(self)
         self._tb = treebuffer
         self._geom = geometry
-
-        print("stepping action")
 
     def UserSteppingAction(self, step):
         """Collect data for current simulation step"""
@@ -555,7 +416,6 @@ class MySteppingAction(G4UserSteppingAction):
             print("Reached maximum tracks:", istp)
             return
 
-        print("stepping action")
         track = step.GetTrack()
         prestep = step.GetPreStepPoint()
         poststep = step.GetPostStepPoint()
@@ -563,17 +423,14 @@ class MySteppingAction(G4UserSteppingAction):
         tb.pid[istp] = track.GetDefinition().GetPDGEncoding()
         tb.parid[istp] = track.GetParentID()
         tb.ekin[istp] = prestep.GetKineticEnergy() / GeV
-        # Capture step position
-        prepos = prestep.GetPosition()
-        postpos = poststep.GetPosition()
-        tb.xs[istp] = prepos.x / cm
-        tb.ys[istp] = prepos.y / cm
-        tb.zs[istp] = prepos.z / cm
-        tb.xe[istp] = postpos.x / cm
-        tb.ye[istp] = postpos.y / cm
-        tb.ze[istp] = postpos.z / cm
+        process = track.GetCreatorProcess()
+        if process == None:
+            process = "None"
+        else:
+            process = str(process.GetProcessName())
+        tb.proc.push_back(process)
+        tb.track_length[istp] = track.GetTrackLength()
         tb.nstep[0] += 1
-        # return
 
 
 ###################################################################
@@ -581,7 +438,7 @@ class MySteppingAction(G4UserSteppingAction):
 if "__main__" == __name__:
     # Run the simulation
 
-    mysim = MySimulation()
-    mysim.initialize()
-    mysim.run()
-    mysim.finalize()
+    sim = Simulation()
+    sim.initialize()
+    sim.run()
+    sim.finalize()
