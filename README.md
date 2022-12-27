@@ -29,18 +29,18 @@
 #### How to run the simulation
 
 1. Make an output folder in the g4mu directory:
-```
-cd g4mu
-mkdir output
-```
+  ```
+  cd g4mu
+  mkdir output
+  ```
 2. Run the simulation script from the g4mu directory as follows:
-```
-python simulation/propagate_muons_root_output_geant4_pybind.py -o output/icesim.root -n 1000 -e 20000 -rs 42
-```
-Arguments:
-- `-n` is the number of events
-- `-e` is the projectile energy in MeV
-- `-rs` is the random seed (optional)
-- `so` is the source particle name (optional; default is 'mu-')
+  ```
+  python simulation/propagate_muons_root_output_geant4_pybind.py -o output/icesim.root -n 1000 -e 20000 -rs 42
+  ```
+  Arguments:
+  - `-n` is the number of events
+  - `-e` is the projectile energy in MeV
+  - `-rs` is the random seed (optional)
+  - `so` is the source particle name (optional; default is 'mu-')
 
 The above command will run the Geant4 simulation and save the detailed information (including secondary energies, track lengths, and processes that created them) into ROOT trees (one tree entry per event). 
