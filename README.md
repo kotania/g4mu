@@ -21,8 +21,8 @@
      ```
   * To set the G4 environment variables (e.g. where the Geant4 data tables are stored), add `source /path/to/geant4-v11.1.0-install/bin/geant4.sh` to .bashrc or .bash_profile.
 * [geant4_pybind](https://github.com/HaarigerHarald/geant4_pybind)
-  * Requires core Geant4 to be already built on the system
-  * Note that the `-DGEANT4_BUILD_TLS_MODEL=global-dynamic` flag when building Geant4 is required to properly build geant4_pybind.
+  * Requires core Geant4 to be already built on the system.
+  * Note that the `-DGEANT4_BUILD_TLS_MODEL=global-dynamic` flag passed when building Geant4 is required to properly build geant4_pybind.
 * ROOT
   * This project used ROOT 6.26/10 cloned from [here](https://github.com/root-project/root.git) and built from source.
       
