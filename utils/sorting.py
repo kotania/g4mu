@@ -2,7 +2,7 @@
 Natural sorting of the lists of strings containing floats (e.g. 'XX_1.0_YY', 'XX_1.05_YY')
 Implementation taken from https://stackoverflow.com/questions/5967500/how-to-correctly-sort-a-string-with-a-number-inside
 """
-
+import re
 
 def atof(text):
     try:
