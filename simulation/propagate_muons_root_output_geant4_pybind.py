@@ -13,6 +13,7 @@ December 22, 2022
 from copy import copy
 import numpy as np
 import sys
+import os
 
 sys.path.append("../")
 
@@ -140,17 +141,22 @@ class Simulation:
         if self._args.source is not None:
             self._source = self._args.source
         if self._args.energy is not None:
-            self._energies = [
-                self._args.energy * GeV,
-            ]
+            self._energy = self._args.energy
         if self._args.output is not None:
-            self._ofilename = self._args.output
+            basename_without_ext, ext = os.path.basename(self._args.output).split(".")
+            dirname = os.path.dirname(self._args.output)
+            energy_gev = self._energy / GeV
+            ext_basename = os.path.join(
+                dirname,
+                basename_without_ext + "_%s_GeV" % np.round(energy_gev, 1) + "." + ext,
+            )
+            self._ofilename = ext_basename
         if self._args.seed is not None:
             self._random_seed = self._args.seed
         print("Configuration:")
         print("  nevents:", self._nevents)
         print("   source:", self._source)
-        print("   energies:", self._energies)
+        print("   energies:", args.energy)
         print("   output:", self._ofilename)
         print(" physlist:", self._physlist_name)
         print("     seed:", self._random_seed)
@@ -332,8 +338,9 @@ class PrimaryGeneratorAction(G4VUserPrimaryGeneratorAction):
         tb.ti[0] = time / ns
         tb.pxi[0] = 0
         tb.pyi[0] = 0
-        tb.pzi[0] = np.sqrt(args.energy**2 - mass**2) / GeV
-        tb.ekini[0] = (args.energy - mass) / GeV
+        total_energy = args.energy + mass
+        tb.pzi[0] = np.sqrt(total_energy**2 - mass**2) / GeV
+        tb.ekini[0] = args.energy
         tb.mi[0] = mass / GeV
 
 
