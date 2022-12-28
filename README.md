@@ -25,6 +25,9 @@
   * Note that the `-DGEANT4_BUILD_TLS_MODEL=global-dynamic` flag passed when building Geant4 is required to properly build geant4_pybind.
 * ROOT
   * This project used ROOT 6.26/10 cloned from [here](https://github.com/root-project/root.git) and built from source.
+
+* [numpy_indexed](https://github.com/EelcoHoogendoorn/Numpy_arraysetops_EP)
+  * This is not necessary to run the simulations and make ROOT files, but is used in post-processing to group the ROOT tree data into separate tracks.
       
 
 #### How to run the simulation
