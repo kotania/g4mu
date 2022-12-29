@@ -75,12 +75,13 @@ def get_event_data(ttree, event_num):
     return secondary_data_dict
 
 
-def group_data_by_track_id(secondary_data_dict):
+def group_data_by_track_id(ttree, secondary_data_dict):
 
     """
     Extract Geant4 track-level information from the step-level information recorded as dict (see get_event_data above).
     Input:
     secondary_data_dict: the output of get_event_data for the event of interest (dict)
+    ttree: input ROOT TTree object
 
     Returns:
     grouped_secondary_data: dictionary containing the secondary data grouped into tracks
@@ -295,7 +296,7 @@ if __name__ == "__main__":
             secondary_data_dict = get_event_data(ttree, event_num=i)
 
             grouped_secondary_data, muon_data = group_data_by_track_id(
-                secondary_data_dict
+                ttree, secondary_data_dict
             )
             for process in extract_processes:
 
