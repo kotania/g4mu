@@ -322,23 +322,25 @@ if __name__ == "__main__":
                 except TypeError:
                     continue
 
-        for process in extract_processes:
+    for process in extract_processes:
 
-            print("Saving the csv output for process %s" % process)
+        print("Saving the csv output for process %s" % process)
 
-            secondary_data_as_df = pd.DataFrame.from_records(
-                np.array(secondary_data[process]),
-                columns=[
-                    "sum_of_sec_track_lengths_without_FT_correction [m]",
-                    "sum_of_sec_track_lengths_with_FT_correction [m]",
-                    "sum_of_sec_kin_energies [GeV]",
-                    "muon_kinetic_energy [GeV]",
-                    "muon_track_length [m]",
-                ],
-            )
+        secondary_data_as_df = pd.DataFrame.from_records(
+            np.array(secondary_data[process]),
+            columns=[
+                "sum_of_sec_track_lengths_without_FT_correction [m]",
+                "sum_of_sec_track_lengths_with_FT_correction [m]",
+                "sum_of_sec_kin_energies [GeV]",
+                "muon_kinetic_energy [GeV]",
+                "muon_track_length [m]",
+            ],
+        )
 
-            base_filename = os.path.basename(file_path).split(".root")[0]
-            secondary_data_as_df.to_csv(
-                os.path.join(args.output_dir, base_filename + "_%s.csv" % process),
-                index=False,
-            )
+        if not os.path.exists(args.output_dir):
+            os.makedirs(args.output_dir)
+
+        secondary_data_as_df.to_csv(
+            os.path.join(args.output_dir, "secondaries_%s.csv" % process),
+            index=False,
+        )
