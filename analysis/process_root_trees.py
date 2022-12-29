@@ -44,7 +44,7 @@ def get_event_data(ttree, event_num):
     """
 
     # Get the tree data for the current event
-    ttree.GetEntry(i)
+    ttree.GetEntry(event_num)
     # PDG IDs of the track-generating particles (e.g. muon, electron...)
     sec_pids = np.array(ttree.pid).astype(int)
     # Unique Geant4 track IDs
@@ -292,7 +292,7 @@ if __name__ == "__main__":
 
         for i in tqdm(range(n_entries)):
 
-            secondary_data_dict = get_event_data(ttree, i)
+            secondary_data_dict = get_event_data(ttree, event_num=i)
 
             grouped_secondary_data, muon_data = group_data_by_track_id(
                 secondary_data_dict
