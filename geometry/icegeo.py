@@ -14,7 +14,7 @@ class IceCubeDetectorConstruction(G4VUserDetectorConstruction):
 
         # World
         world_sizeXY = 2000 * m
-        world_sizeZ = 2000 * m
+        world_sizeZ = 10000 * m
 
         H = nist.FindOrBuildElement("H")
         O = nist.FindOrBuildElement("O")
