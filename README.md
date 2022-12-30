@@ -55,6 +55,6 @@ The above command will run the Geant4 simulation and save the detailed informati
    ```
    
    Arguments:
-   - `id` is the input directory, i.e. the location of the ROOT files from the previous step
-   - `od` is the output directory, i.e. where the csv files should be saved (can be the same as `id`)
-   - `ecut` is the upper energy threshold (in GeV) for the secondaries to process (optional; default is 0.5)
+   - `-id` is the input directory, i.e. the location of the ROOT files from the previous step
+   - `-od` is the output directory, i.e. where the csv files should be saved (can be the same as `id`)
+   - `-ecut` is the upper energy threshold (in GeV) for the secondaries to process (optional; default is 0.5)
