@@ -48,3 +48,13 @@
     - `-so` is the source particle name (optional; default is 'mu-')
 
 The above command will run the Geant4 simulation and save the detailed information (including secondary energies, track lengths, and processes that created them) into ROOT trees (one tree entry per event). 
+
+3. Process the ROOT trees and save the relevant data into csv files:
+   ```
+   python analysis/process_root_trees.py -id output/ -od output/ -ecut 0.5
+   ```
+   
+   Arguments:
+   - `id` is the input directory, i.e. the location of the ROOT files from the previous step
+   - `od` is the output directory, i.e. where the csv files should be saved (can be the same as `id`)
+   - `ecut` is the upper energy threshold (in GeV) for the secondaries to process (optional; default is 0.5)
