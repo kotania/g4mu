@@ -126,7 +126,9 @@ def group_data_by_track_id(ttree, secondary_data_dict):
     return grouped_secondary_data, muon_data
 
 
-def get_grandparent_processes(track_ids, parent_track_ids, parent_processes):
+def get_grandparent_processes(
+    track_ids, parent_track_ids, parent_processes, sec_energies
+):
     """
     Since it is possible that some electrons were created not as the result of direct muon ionization,
     but as the result of the secondary electron ionization ('eIoni' process), we need to search over the "grantparent"
@@ -144,14 +146,18 @@ def get_grandparent_processes(track_ids, parent_track_ids, parent_processes):
     # To get the grandparent's process, create a lookup table over the track IDs (this is MUCH faster than np.where search!)
     track_dict = {track_ids[x]: x for x in range(len(track_ids))}
     # The first parent is a muon and was not created in any processes, so we just append a 'None' at the beginning
+    parent_inds = np.array([track_dict[parent] for parent in parent_track_ids[1:]])
     grandparent_processes = np.append(
         "None",
-        parent_processes[
-            np.array([track_dict[parent] for parent in parent_track_ids[1:]])
-        ],
+        parent_processes[parent_inds],
+    )
+    # Similarly, we can get the energy lost in the grandparent process (i.e. initial energy of the parent)
+    parent_energies = np.append(
+        1e30,
+        sec_energies[parent_inds],
     )
 
-    return grandparent_processes
+    return grandparent_processes, parent_energies
 
 
 def get_secondary_track_lengths_for_process(
@@ -175,33 +181,29 @@ def get_secondary_track_lengths_for_process(
 
     """
 
-    grandparent_processes = get_grandparent_processes(
+    grandparent_processes, parent_energies = get_grandparent_processes(
         grouped_secondary_data["track_id"],
         grouped_secondary_data["parent_track_id"],
         grouped_secondary_data["parent_process"],
+        grouped_secondary_data["secondary_ekin"],
     )
     # We search for an electron/positron in all processes but the muon nuclear interaction
     if process != "muonNuclear":
 
-        mask = (
-            (np.abs(grouped_secondary_data["secondary_pid"]) == 11)
-            & (grouped_secondary_data["secondary_ekin"] < energy_cut)
-            & (
-                (grandparent_processes == process)
-                | (grouped_secondary_data["parent_process"] == process)
+        mask = (np.abs(grouped_secondary_data["secondary_pid"]) == 11) & (
+            ((grandparent_processes == process) & (parent_energies < energy_cut))
+            | (
+                (grouped_secondary_data["parent_process"] == process)
+                & (grouped_secondary_data["secondary_ekin"] < energy_cut)
             )
         )
     # Otherwise, we search for any charged particles (hadrons)
     # TODO: check the actual charge instead of just removing the photons
     else:
-        mask = (
-            (grouped_secondary_data["secondary_ekin"] < energy_cut)
-            & (
-                (grandparent_processes == process)
-                | (grouped_secondary_data["parent_process"] == process)
-            )
-            & (grouped_secondary_data["secondary_pid"] != 22)
-        )
+        mask = ((grandparent_processes == process) & (parent_energies < energy_cut)) | (
+            (grouped_secondary_data["parent_process"] == process)
+            & (grouped_secondary_data["secondary_ekin"] < energy_cut)
+        ) & (grouped_secondary_data["secondary_pid"] != 22)
 
     if np.sum(mask) != 0:
 
