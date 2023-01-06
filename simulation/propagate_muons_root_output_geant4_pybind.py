@@ -27,10 +27,14 @@ from geant4_pybind import (
     G4UserEventAction,
     G4UserSteppingAction,
     G4UserTrackingAction,
+    G4UserStackingAction,
 )
 
+from geant4_pybind import G4ClassificationOfNewTrack
+
 # Physics processes
-from geant4_pybind import FTFP_BERT, QGSP_BERT, QGSP_BERT_HP, QBBC
+from geant4_pybind import FTFP_BERT, QGSP_BERT, QGSP_BERT_HP, QBBC, G4OpticalPhysics
+from simulation.physics_list import CustomPhysicsList
 
 # Detector construction
 from geant4_pybind import G4VUserDetectorConstruction
@@ -47,7 +51,7 @@ from geant4_pybind import G4UImanager
 from geant4_pybind import HepRandom
 
 # Physical Units
-from geant4_pybind import MeV, cm, g, GeV, m, ns
+from geant4_pybind import MeV, cm, g, GeV, m, ns, eV
 from geant4_pybind import G4ThreeVector
 
 # G4 Configuration
@@ -76,9 +80,10 @@ parser.add_argument("-o", "--output", help="Name of the ROOT output file")
 parser.add_argument("-rs", "--seed", type=int, help="Random seed", default=312)
 parser.add_argument(
     "--physlist",
-    help="G4 Physics List: FTFP_BERT, QGSP_BERT, QGSP_BERT_HP",
+    help="G4 Physics List: FTFP_BERT, QGSP_BERT, QGSP_BERT_HP, custom",
     default="QGSP_BERT",
 )
+parser.add_argument("-ch", "--simulate-cherenkov", action="store_true")
 
 args = parser.parse_args()
 
@@ -169,7 +174,10 @@ class Simulation:
         otree = TTree("muons_in_ice", "Muon Simulation")
         tb = TreeBuffer()
         tb.maxInit = int(1e6)
-        tb.maxTracks = int(1e7)
+        tb.maxTracks = int(3e7)
+        tb.n_photons_lowe_sec = 0
+        tb.n_photons_muon = 0
+        tb.n_photons_tot = 0
         tb.ev = array("i", [0])
         # Geant4 initial state particles
         tb.ni = array("i", [0])
@@ -190,12 +198,20 @@ class Simulation:
         tb.parid = array("i", np.zeros(tb.maxTracks, dtype="int64"))
         proc_strings = ROOT.vector("string")()
         tb.proc = proc_strings
+
+        tb.parcount = array("i", np.zeros(tb.maxTracks, dtype="int64"))
+
         tb.track_length = array("d", np.zeros(tb.maxTracks, dtype="float64"))
         tb.ekin = array("d", np.zeros(tb.maxTracks, dtype="float64"))
         # Hook for ancestor particle
         tb.ancestor = None
 
         otree.Branch("ev", tb.ev, "ev/I")
+        otree.Branch(
+            "n_photons_lowe_sec", tb.n_photons_lowe_sec, "n_photons_lowe_sec/I"
+        )
+        otree.Branch("n_photons_muon", tb.n_photons_muon, "n_photons_muon/I")
+        otree.Branch("n_photons_tot", tb.n_photons_tot, "n_photons_tot/I")
         otree.Branch("ni", tb.ni, "ni/I")
         otree.Branch("pidi", tb.pidi, "pidi[ni]/I")
         otree.Branch("xi", tb.xi, "xi[ni]/D")
@@ -212,6 +228,7 @@ class Simulation:
         otree.Branch("pid", tb.pid, "pid[nstep]/I")
         otree.Branch("parid", tb.parid, "parid[nstep]/I")
         otree.Branch("proc", tb.proc)
+        otree.Branch("parcount", tb.parcount, "parcount[nstep]/I")
         otree.Branch("track_length", tb.track_length, "track_length[nstep]/D")
         otree.Branch("ekin", tb.ekin, "ekin[nstep]/D")
 
@@ -248,11 +265,15 @@ class Simulation:
             self._physics_list = QGSP_BERT_HP()
         elif self._physlist_name == "QBBC":
             self._physics_list = QBBC()
+        elif self._physlist_name == "custom":
+            self._physics_list = CustomPhysicsList()
         else:
             raise ValueError(
                 "Invalid physics list: '%r'.  Please choose from:FTFP_BERT, QGSP_BERT, QGSP_BERT_HP, QBBC"
                 % self._physlist_name
             )
+        if args.simulate_cherenkov:
+            self._physics_list.RegisterPhysics(G4OpticalPhysics())
         self.run_manager.SetUserInitialization(self._physics_list)
         # return
 
@@ -274,9 +295,12 @@ class Simulation:
             treebuffer=self._treebuffer, geometry=self._geom
         )
 
+        self._stack_action = StackingAction(treebuffer=self._treebuffer)
+
         self.run_manager.SetUserAction(self._run_action)
         self.run_manager.SetUserAction(self._event_action)
         self.run_manager.SetUserAction(self._step_action)
+        self.run_manager.SetUserAction(self._stack_action)
 
     def _init_run_manager(self):
         print("Initializing run manager")
@@ -370,6 +394,10 @@ class EventAction(G4UserEventAction):
 
         self._tb.ni[0] = 0
         self._tb.nstep[0] = 0
+        self._tb.n_photons_muon = 0
+        self._tb.n_photons_lowe_sec = 0
+        self._tb.n_photons_tot = 0
+        self._tb.parcount[:] = array("i", np.zeros(self._tb.maxTracks, dtype="int64"))
         # return
 
     def EndOfEventAction(self, event):
@@ -405,6 +433,40 @@ class EventAction(G4UserEventAction):
         tb.ni[0] = ni
         self._otree.Fill()
         tb.proc.clear()
+        print("Total number of photons: %s" % tb.n_photons_tot)
+        print("Number of photons from muon: %s" % tb.parcount[0])
+
+
+class StackingAction(G4UserStackingAction):
+    def __init__(self, treebuffer):
+        super().__init__()
+        self._tb = treebuffer
+
+    def ClassifyNewTrack(self, track):
+
+        tb = self._tb
+        parent_track_id = track.GetParentID()
+        photon_energy = track.GetKineticEnergy()
+        track_id = track.GetTrackID()
+
+        particleName = track.GetDefinition().GetParticleName()
+        try:
+            process = str(track.GetCreatorProcess().GetProcessName())
+        except AttributeError:
+            process = "None"
+        if (
+            (particleName == "opticalphoton")
+            & (process == "Cerenkov")
+            & (photon_energy > 1.91 * eV)
+            & (photon_energy < 4.13 * eV)
+        ):
+            tb.n_photons_tot += 1
+            tb.parcount[parent_track_id - 1] += 1
+
+            return G4ClassificationOfNewTrack.fKill
+
+        else:
+            return G4ClassificationOfNewTrack.fUrgent
 
 
 # ------------------------------------------------------------------
@@ -426,15 +488,19 @@ class SteppingAction(G4UserSteppingAction):
         track = step.GetTrack()
         prestep = step.GetPreStepPoint()
         poststep = step.GetPostStepPoint()
-        tb.tid[istp] = track.GetTrackID()
-        tb.pid[istp] = track.GetDefinition().GetPDGEncoding()
-        tb.parid[istp] = track.GetParentID()
-        tb.ekin[istp] = prestep.GetKineticEnergy() / GeV
         process = track.GetCreatorProcess()
         if process == None:
             process = "None"
         else:
             process = str(process.GetProcessName())
+
+        parent_pid = track.GetDefinition().GetPDGEncoding()
+        parent_ekin = track.GetVertexKineticEnergy() / GeV
+
+        tb.tid[istp] = track.GetTrackID()
+        tb.pid[istp] = parent_pid
+        tb.parid[istp] = track.GetParentID()
+        tb.ekin[istp] = prestep.GetKineticEnergy() / GeV
         tb.proc.push_back(process)
         tb.track_length[istp] = track.GetTrackLength()
         tb.nstep[0] += 1
@@ -447,5 +513,12 @@ if "__main__" == __name__:
 
     sim = Simulation()
     sim.initialize()
+    UImanager = G4UImanager.GetUIpointer()
+    if args.simulate_cherenkov:
+        UImanager.ApplyCommand("/process/optical/cerenkov/setMaxPhotons 200")
+        UImanager.ApplyCommand(
+            "/process/optical/cerenkov/setTrackSecondariesFirst true"
+        )
+        UImanager.ApplyCommand("/process/optical/cerenkov/setStackPhotons true")
     sim.run()
     sim.finalize()
