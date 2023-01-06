@@ -39,13 +39,14 @@
    ```
 2. Run the simulation script from the g4mu directory as follows:
    ```
-   python simulation/propagate_muons_root_output_geant4_pybind.py -o output/icesim.root -n 1000 -e 20000 -rs 42
+   python simulation/propagate_muons_root_output_geant4_pybind.py -o output/icesim.root -n 1000 -e 20000 -rs 42 -ch
    ```
     Arguments:
     - `-n` is the number of events
     - `-e` is the projectile energy in MeV
     - `-rs` is the random seed (optional)
     - `-so` is the source particle name (optional; default is 'mu-')
+    - `-ch` enables Cherenkov photon simulation and counting mode (slows down the simulation significantly, do not use if optical photons are not needed)
 
 The above command will run the Geant4 simulation and save the detailed information (including secondary energies, track lengths, and processes that created them) into ROOT trees (one tree entry per event). 
 
