@@ -24,6 +24,14 @@ class IceCubeDetectorConstruction(G4VUserDetectorConstruction):
         normal_ice = G4Material("normal_ice", 0.9216 * g / cm3, nComponents=2)
         normal_ice.AddElement(H, nAtoms=2)
         normal_ice.AddElement(O, nAtoms=1)
+        normal_ice.GetIonisation().SetMeanExcitationEnergy(75.0 * eV)
+
+        mpt_ice = G4MaterialPropertiesTable()
+        ice_ephot = G4doubleVector([1.91 * eV, 4.13 * eV])
+        ice_refr = G4doubleVector([1.33, 1.33])
+        ice_bins = 2
+        mpt_ice.AddProperty("RINDEX", ice_ephot, ice_refr, ice_bins)
+        normal_ice.SetMaterialPropertiesTable(mpt_ice)
 
         # semiheavy_ice = G4Material("semiheavy_ice", 0.9712 * g / cm3, nComponents=3)
         # semiheavy_ice.AddElement(H, nAtoms=1)
