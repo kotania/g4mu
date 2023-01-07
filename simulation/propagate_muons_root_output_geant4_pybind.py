@@ -177,7 +177,7 @@ class Simulation:
         tb.maxTracks = int(3e7)
         tb.n_photons_lowe_sec = 0
         tb.n_photons_muon = 0
-        tb.n_photons_tot = 0
+        tb.n_photons_tot = array("i", [0])
         tb.ev = array("i", [0])
         # Geant4 initial state particles
         tb.ni = array("i", [0])
@@ -207,10 +207,6 @@ class Simulation:
         tb.ancestor = None
 
         otree.Branch("ev", tb.ev, "ev/I")
-        otree.Branch(
-            "n_photons_lowe_sec", tb.n_photons_lowe_sec, "n_photons_lowe_sec/I"
-        )
-        otree.Branch("n_photons_muon", tb.n_photons_muon, "n_photons_muon/I")
         otree.Branch("n_photons_tot", tb.n_photons_tot, "n_photons_tot/I")
         otree.Branch("ni", tb.ni, "ni/I")
         otree.Branch("pidi", tb.pidi, "pidi[ni]/I")
@@ -228,7 +224,7 @@ class Simulation:
         otree.Branch("pid", tb.pid, "pid[nstep]/I")
         otree.Branch("parid", tb.parid, "parid[nstep]/I")
         otree.Branch("proc", tb.proc)
-        otree.Branch("parcount", tb.parcount, "parcount[nstep]/I")
+        otree.Branch("parcount", tb.parcount, "parcount[%s]/I" % int(tb.maxTracks))
         otree.Branch("track_length", tb.track_length, "track_length[nstep]/D")
         otree.Branch("ekin", tb.ekin, "ekin[nstep]/D")
 
@@ -394,9 +390,7 @@ class EventAction(G4UserEventAction):
 
         self._tb.ni[0] = 0
         self._tb.nstep[0] = 0
-        self._tb.n_photons_muon = 0
-        self._tb.n_photons_lowe_sec = 0
-        self._tb.n_photons_tot = 0
+        self._tb.n_photons_tot[0] = 0
         self._tb.parcount[:] = array("i", np.zeros(self._tb.maxTracks, dtype="int64"))
         # return
 
@@ -433,7 +427,7 @@ class EventAction(G4UserEventAction):
         tb.ni[0] = ni
         self._otree.Fill()
         tb.proc.clear()
-        print("Total number of photons: %s" % tb.n_photons_tot)
+        print("Total number of photons: %s" % np.sum(tb.parcount))
         print("Number of photons from muon: %s" % tb.parcount[0])
 
 
@@ -460,7 +454,7 @@ class StackingAction(G4UserStackingAction):
             & (photon_energy > 1.91 * eV)
             & (photon_energy < 4.13 * eV)
         ):
-            tb.n_photons_tot += 1
+            tb.n_photons_tot[0] += 1
             tb.parcount[parent_track_id - 1] += 1
 
             return G4ClassificationOfNewTrack.fKill
