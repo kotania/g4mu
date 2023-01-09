@@ -451,8 +451,6 @@ class StackingAction(G4UserStackingAction):
         if (
             (particleName == "opticalphoton")
             & (process == "Cerenkov")
-            & (photon_energy > 1.91 * eV)
-            & (photon_energy < 4.13 * eV)
         ):
             tb.n_photons_tot[0] += 1
             tb.parcount[parent_track_id - 1] += 1
