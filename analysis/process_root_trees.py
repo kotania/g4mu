@@ -277,6 +277,7 @@ def get_secondary_info_for_process(process, grouped_secondary_data, energy_cut):
         sec_ekin_sum,
         num_photons_lowE_sec,
         num_photons_muon,
+        grouped_secondary_data["total_num_photons"]
     )
 
 
@@ -343,6 +344,7 @@ if __name__ == "__main__":
                         sec_ekin_sum,
                         num_photons_lowE_sec,
                         num_photons_muon,
+                        total_num_photons
                     ) = get_secondary_info_for_process(
                         process, grouped_secondary_data, args.energy_cut
                     )
@@ -356,6 +358,7 @@ if __name__ == "__main__":
                             muon_data["track_length"],
                             num_photons_lowE_sec,
                             num_photons_muon,
+                            total_num_photons
                         ]
                     )
                 # If the get_secondary_info_for_process returned None (no secondaries passed the selection criteria),
@@ -377,6 +380,7 @@ if __name__ == "__main__":
                 "muon_track_length [m]",
                 "num_photons_lowE_sec",
                 "num_photons_muon",
+                "total_num_photons"
             ],
         )
 
