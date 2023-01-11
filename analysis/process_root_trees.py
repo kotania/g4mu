@@ -314,6 +314,8 @@ if __name__ == "__main__":
     input_files = glob.glob(os.path.join(args.input_dir, "*.root"))
     input_files.sort(key=natural_keys)
 
+    photon_spectra = {}
+
     print("Found %s input ROOT file(s)" % len(input_files))
 
     for file_path in input_files:
@@ -335,6 +337,16 @@ if __name__ == "__main__":
             grouped_secondary_data, muon_data = group_data_by_track_id(
                 ttree, secondary_data_dict
             )
+
+
+            photon_mask = grouped_secondary_data["secondary_pid"] == 22
+            muon_energy = np.round(muon_data["energy"], 3)
+            if muon_energy not in photon_spectra.keys():
+            	photon_spectra[muon_energy] = []
+
+            photon_spectra[muon_energy].append(grouped_secondary_data["secondary_ekin"][photon_mask])
+
+
             for process in extract_processes:
 
                 try:
@@ -391,3 +403,5 @@ if __name__ == "__main__":
             os.path.join(args.output_dir, "secondaries_%s.csv" % process),
             index=False,
         )
+
+    np.save(args.output_dir, photon_spectra)
