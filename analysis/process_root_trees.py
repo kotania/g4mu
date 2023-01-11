@@ -404,4 +404,4 @@ if __name__ == "__main__":
             index=False,
         )
 
-    np.save(args.output_dir, photon_spectra)
+    np.save(os.path.join(args.output_dir, "photon_spectra.npy"), photon_spectra)
