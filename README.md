@@ -10,7 +10,7 @@
   
      ```
      wget https://gitlab.cern.ch/geant4/geant4/-/archive/v11.1.0/geant4-v11.1.0.tar.gz
-     tar -xzvf geant4-v11.1.0
+     tar -xzvf geant4-v11.1.0.tar.gz
      mkdir geant4-v11.1.0-install geant4-v11.1.0-build
      cd geant4-v11.1.0-build
      cmake ../geant4-v11.1.0 -DCMAKE_INSTALL_PREFIX=../geant4-v11.1.0-install -DGEANT4_INSTALL_DATA=ON -DGEANT4_BUILD_TLS_MODEL=global-dynamic
