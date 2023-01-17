@@ -51,7 +51,7 @@ from geant4_pybind import G4UImanager
 from geant4_pybind import HepRandom
 
 # Physical Units
-from geant4_pybind import MeV, cm, g, GeV, m, ns, eV
+from geant4_pybind import MeV, cm, g, GeV, m, ns, eV, mm
 from geant4_pybind import G4ThreeVector
 
 # G4 Configuration
@@ -270,7 +270,9 @@ class Simulation:
             )
         if args.simulate_cherenkov:
             self._physics_list.RegisterPhysics(G4OpticalPhysics())
+        # self._physics_list.SetDefaultCutValue(0.1 * mm)
         self.run_manager.SetUserInitialization(self._physics_list)
+
         # return
 
     def _init_generator(self):
@@ -448,10 +450,7 @@ class StackingAction(G4UserStackingAction):
             process = str(track.GetCreatorProcess().GetProcessName())
         except AttributeError:
             process = "None"
-        if (
-            (particleName == "opticalphoton")
-            & (process == "Cerenkov")
-        ):
+        if (particleName == "opticalphoton") & (process == "Cerenkov"):
             tb.n_photons_tot[0] += 1
             tb.parcount[parent_track_id - 1] += 1
 
@@ -512,5 +511,7 @@ if "__main__" == __name__:
             "/process/optical/cerenkov/setTrackSecondariesFirst true"
         )
         UImanager.ApplyCommand("/process/optical/cerenkov/setStackPhotons true")
+        UImanager.ApplyCommand("/run/setCut 0.1 mm")
+        UImanager.ApplyCommand("/run/particle/dumpCutValues")
     sim.run()
     sim.finalize()
